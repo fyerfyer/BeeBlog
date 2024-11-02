@@ -1,3 +1,5 @@
+<!-- Most of the template are copied from Alex Edwards' Let's Go book -->
+<!-- I just do some small modification and add some small features -->
 {{define "base"}}
 <!doctype html>
 <html lang='en'>
