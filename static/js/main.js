@@ -1,3 +1,5 @@
+/* All of the js is copied from Alex Edwards' Let's go book */
+
 var navLinks = document.querySelectorAll("nav a");
 for (var i = 0; i < navLinks.length; i++) {
 	var link = navLinks[i]
