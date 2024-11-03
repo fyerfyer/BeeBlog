@@ -37,17 +37,17 @@ func CreateUser(user *User) (int, error) {
 	return int(id), err
 }
 
-func GetUserStatusById(id int) (int, error) {
+func GetUserById(id int) (*User, error) {
 	o := orm.NewOrm()
 	user := User{}
 
-	err := o.QueryTable("user").Filter("id", id).One(&user, "status")
+	err := o.QueryTable("user").Filter("id", id).One(&user)
 	if err != nil {
-		log.Printf("GetUserStatusById failed: %v", err)
-		return 0, err
+		log.Printf("GetUserById failed: %v", err)
+		return nil, err
 	}
 
-	return user.Status, nil
+	return &user, nil
 }
 
 func getUserByEmail(email string) (*User, error) {
@@ -61,6 +61,16 @@ func getUserByEmail(email string) (*User, error) {
 	}
 
 	return &user, nil
+}
+
+func GetUserStatusById(id int) (int, error) {
+	user, err := GetUserById(id)
+	if err != nil {
+		log.Printf("GetUserStatusById failed: %v", err)
+		return 0, err
+	}
+
+	return user.Status, nil
 }
 
 func (u *User) Valid() map[string]string {

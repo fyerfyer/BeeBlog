@@ -17,7 +17,7 @@ func (c *BaseController) Prepare() {
 
 	// middleware 2
 	url := c.Ctx.Request.URL.Path
-	if url == "/beegoblog/create" || url == "/beegoblog/"+c.Ctx.Input.Param(":id") || url == "/user/logout" {
+	if url == "/beegoblog/create" || url == "/beegoblog/"+c.Ctx.Input.Param(":id") || url == "/user/logout" || url == "/user/profile" {
 		if !utils.IsAuthenticated(&c.Controller) {
 			c.Redirect("/user/login", http.StatusSeeOther)
 		}

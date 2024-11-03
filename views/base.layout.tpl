@@ -24,6 +24,7 @@
             <div>
                 
                 {{if .IsAuthenticated}}
+                <a href='/user/profile'>Profile</a>
                 <form action='/user/logout' method='POST'>
                     <button>Logout</button>
                 </form>

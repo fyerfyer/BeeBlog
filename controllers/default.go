@@ -289,3 +289,24 @@ func (c *LogoutController) Post() {
 	utils.SetFlash(&c.Controller, "success", "Successfully log out")
 	c.Redirect("/", http.StatusFound)
 }
+
+type ProfileController struct {
+	BaseController
+}
+
+func (c *ProfileController) Get() {
+	c.TplName = "profile.page.tpl"
+	_, id := utils.GetIntSession(&c.Controller, "authenticatedUserID")
+	if id == 0 {
+		log.Println("Failed to get userId")
+		return
+	}
+
+	user, err := models.GetUserById(id)
+	if err != nil {
+		log.Printf("Failed to get the user: %v", err)
+		return
+	}
+
+	c.Data["User"] = user
+}
