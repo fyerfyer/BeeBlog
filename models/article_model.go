@@ -13,7 +13,7 @@ type Article struct {
 	Content    string    `orm:"type(text)"`
 	CreateTime time.Time `orm:"auto_now_add;type(datetime)"`
 	ExpireTime time.Time `orm:"auto_now_add;type(datetime)"`
-	// User       *User     `orm:"rel(fk)"`                  // related User
+	UserId     int
 }
 
 func init() {
@@ -47,12 +47,13 @@ func GetArticle(id int) (*Article, error) {
 	return &article, nil
 }
 
-func GetAllArticle(article *[]Article) error {
+func GetArticleByUserId(id int, articles *[]Article) error {
 	o := orm.NewOrm()
-	_, err := o.QueryTable("article").All(article)
+	_, err := o.QueryTable("article").Filter("user_id", id).All(articles)
 	if err != nil {
-		log.Fatalf("Failed to get all article: %v", err)
+		log.Printf("GetArticleByUserId failed: %v", err)
+		return err
 	}
 
-	return err
+	return nil
 }

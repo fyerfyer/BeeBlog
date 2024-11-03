@@ -43,18 +43,20 @@ func GetUserStatusById(id int) (int, error) {
 
 	err := o.QueryTable("user").Filter("id", id).One(&user, "status")
 	if err != nil {
+		log.Printf("GetUserStatusById failed: %v", err)
 		return 0, err
 	}
 
 	return user.Status, nil
 }
 
-func GetActiveUserByEmail(email string) (*User, error) {
+func getUserByEmail(email string) (*User, error) {
 	o := orm.NewOrm()
 	user := User{}
 
-	err := o.QueryTable("user").Filter("email", email).Filter("status", 1).One(&user)
-	if err == orm.ErrNoRows {
+	err := o.QueryTable("user").Filter("email", email).One(&user)
+	if err != nil {
+		log.Printf("getUserByEmail failed: %v", err)
 		return nil, err
 	}
 
@@ -87,7 +89,7 @@ func (u *User) Valid() map[string]string {
 
 // there's no need to fecch other field?
 func UserAuthenticate(email, password string) (int, bool, bool) {
-	user, err := GetActiveUserByEmail(email)
+	user, err := getUserByEmail(email)
 	if err != nil {
 		log.Printf("Failed to get the user: %v", err)
 		return 0, false, false
@@ -101,9 +103,9 @@ func UserAuthenticate(email, password string) (int, bool, bool) {
 	return user.Id, true, true
 }
 
-func DeactiveUser(id int) error {
+func SetUserStatusById(id int, status int) error {
 	o := orm.NewOrm()
-	_, err := o.QueryTable("user").Filter("id", id).Update(orm.Params{"status": 0})
+	_, err := o.QueryTable("user").Filter("id", id).Update(orm.Params{"status": status})
 	if err != nil {
 		log.Printf("Failed to deactive user: %v", err)
 	}
