@@ -89,6 +89,11 @@ func (u *User) Valid() map[string]string {
 
 // there's no need to fecch other field?
 func UserAuthenticate(email, password string) (int, bool, bool) {
+	if email == "" {
+		log.Printf("Email cannot be empty")
+		return 0, false, false
+	}
+
 	user, err := getUserByEmail(email)
 	if err != nil {
 		log.Printf("Failed to get the user: %v", err)

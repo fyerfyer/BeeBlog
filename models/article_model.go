@@ -29,7 +29,7 @@ func CreateArticle(article *Article) (int, error) {
 	return int(id), err
 }
 
-func GetArticle(id int) (*Article, error) {
+func GetArticleById(id int) (*Article, error) {
 	o := orm.NewOrm()
 	article := Article{Id: id}
 	err := o.Read(&article)

@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	// "github.com/beego/beego/v2/client/orm"
-	// bee "github.com/beego/beego/v2/server/web"
+	bee "github.com/beego/beego/v2/server/web"
 )
 
 type Err struct {
@@ -25,15 +25,19 @@ type HomeController struct {
 	HasInitiated bool
 }
 
-// todo: show the latest articles in the homepage, and all articles in other pages
-// and also page division
 func (c *HomeController) Get() {
-	// utils.RenderAuthenticated(&c.Controller, "base.layout.tpl")
-	if !c.HasInitiated {
-		models.GetAllArticle(c.Articles)
-		c.HasInitiated = true
-	}
 	utils.RenderFlash(&c.Controller, "base.layout.tpl")
+
+	hasAuthenticatedUser, userId := utils.GetIntSession(&c.Controller, "authenticatedUserID")
+	if !hasAuthenticatedUser {
+		c.Articles = &[]models.Article{}
+	} else {
+		err := models.GetArticleByUserId(userId, c.Articles)
+		if err != nil {
+			log.Printf("Failed to get articles of current user: %v", err)
+			return
+		}
+	}
 
 	pageStr := c.Ctx.Input.Param(":page")
 	if pageStr == "" {
@@ -58,7 +62,6 @@ type ShowController struct {
 
 func (c *ShowController) Get() {
 	utils.RenderFlash(&c.Controller, "base.layout.tpl")
-	// utils.RenderAuthenticated(&c.Controller, "base.layout.tpl")
 
 	c.TplName = "show.page.tpl"
 	idStr := c.Ctx.Input.Param(":id")
@@ -67,14 +70,12 @@ func (c *ShowController) Get() {
 		log.Printf("Invalid article id input: %v", err)
 		return
 	}
-	log.Println("get id: ", id)
 
-	article, err := models.GetArticle(id)
+	article, err := models.GetArticleById(id)
 	if err != nil {
 		log.Printf("GetArticle failed: %v", err)
 		return
 	}
-	log.Println(article)
 
 	c.Data["Title"] = article.Title
 	c.Data["Id"] = article.Id
@@ -90,12 +91,10 @@ type CreateController struct {
 }
 
 func (c *CreateController) Get() {
-	// utils.RenderAuthenticated(&c.Controller, "base.layout.tpl")
 	c.TplName = "create.page.tpl"
 }
 
 func (c *CreateController) Post() {
-	// utils.RenderAuthenticated(&c.Controller, "base.layout.tpl")
 	c.TplName = "create.page.tpl"
 	title := c.GetString("title")
 	content := c.GetString("content")
@@ -107,23 +106,22 @@ func (c *CreateController) Post() {
 	createTime := time.Now()
 	expiresTime := time.Now().Add(time.Duration(expires) * time.Hour * 24)
 
-	// fmt.Println(createTime)
-	// fmt.Println(expiresTime)
-	// user := new(models.User)
-	// user.Username = "fyerfyer"
-	// user.CreateTime = time.Now()
-	// user.Status = 1
-	// user.Password = "dfkjahfk"
+	_, userId := utils.GetIntSession(&c.Controller, "authenticatedUserID")
+	if userId == 0 {
+		log.Println("Failed to get userId")
+		return
+	}
 
 	article := models.Article{
 		Title:      title,
 		Content:    content,
 		CreateTime: createTime,
 		ExpireTime: expiresTime,
-		// User:       user,
+		UserId:     userId,
 	}
-	var id int
-	if id, err = models.CreateArticle(&article); err != nil {
+
+	var articleId int
+	if articleId, err = models.CreateArticle(&article); err != nil {
 		log.Printf("CreateArticle failed: %v", err)
 		c.Data["Error"] = "Failed to create article."
 		c.TplName = "create.page.tpl"
@@ -131,7 +129,7 @@ func (c *CreateController) Post() {
 	}
 	*c.Articles = append(*c.Articles, article)
 	utils.SetFlash(&c.Controller, "success", "Successfully create an article")
-	c.Redirect(fmt.Sprintf("/beegoblog/%d", id), http.StatusFound)
+	c.Redirect(fmt.Sprintf("/beegoblog/%d", articleId), http.StatusFound)
 }
 
 type SignUpController struct {
@@ -139,16 +137,19 @@ type SignUpController struct {
 }
 
 func (c *SignUpController) Get() {
-	// log.Println("Rendering signup page")
-	// utils.RenderAuthenticated(&c.Controller, "base.layout.tpl")
 	c.TplName = "signup.page.tpl"
 	c.Data["NameError"] = Err{HasError: false}
 	c.Data["EmailError"] = Err{HasError: false}
 	c.Data["PasswordError"] = Err{HasError: false}
 }
 
+func setError(err *Err, c *bee.Controller, k string, v string) {
+	c.Data[k] = ""
+	err.HasError = true
+	err.ErrMsg = v
+}
+
 func (c *SignUpController) Post() {
-	// utils.RenderAuthenticated(&c.Controller, "base.layout.tpl")
 	c.TplName = "signup.page.tpl"
 
 	isValid := true
@@ -159,6 +160,7 @@ func (c *SignUpController) Post() {
 	name := c.GetString("name")
 	email := c.GetString("email")
 	password := c.GetString("password")
+
 	c.Data["Name"] = name
 	c.Data["Email"] = email
 	c.Data["Password"] = password
@@ -167,7 +169,7 @@ func (c *SignUpController) Post() {
 		Username:       name,
 		Email:          email,
 		HashedPassword: password,
-		Status:         1,
+		Status:         0,
 		CreateTime:     time.Now(),
 	}
 
@@ -175,20 +177,13 @@ func (c *SignUpController) Post() {
 	if len(errMsg) > 0 {
 		isValid = false
 		for k, v := range errMsg {
-			if k == "Name" {
-				c.Data[k] = ""
-				NameError.HasError = true
-				NameError.ErrMsg = v
-			}
-			if k == "Email" {
-				c.Data[k] = ""
-				EmailError.HasError = true
-				EmailError.ErrMsg = v
-			}
-			if k == "Password" {
-				c.Data[k] = ""
-				PasswordError.HasError = true
-				PasswordError.ErrMsg = v
+			switch k {
+			case "Name":
+				setError(&NameError, &c.Controller, k, v)
+			case "Email":
+				setError(&EmailError, &c.Controller, k, v)
+			case "Password":
+				setError(&PasswordError, &c.Controller, k, v)
 			}
 		}
 	}
@@ -199,8 +194,8 @@ func (c *SignUpController) Post() {
 
 	// if the input is invalid, there's no need to hash
 	if !isValid {
-		c.Render()
 		log.Println("Failed to sign up")
+		c.Render()
 		return
 	}
 
@@ -221,40 +216,55 @@ type LoginController struct {
 
 func (c *LoginController) Get() {
 	utils.RenderFlash(&c.Controller, "base.layout.tpl")
-	// utils.RenderAuthenticated(&c.Controller, "base.layout.tpl")
 	c.TplName = "login.page.tpl"
 	c.Data["Error"] = Err{HasError: false}
 }
 
+func handleNotFound(e *Err, email string, c *bee.Controller) {
+	e.ErrMsg = "Email cannot be empty"
+	e.HasError = true
+	if email != "" {
+		e.ErrMsg = "Cannot find active user with this email"
+	}
+
+	c.Data["Email"] = ""
+	c.Data["Error"] = e
+}
+
+func handleNotAuthenticate(e *Err, c *bee.Controller) {
+	e.HasError = true
+	e.ErrMsg = "Password incorrect"
+	c.Data["Error"] = e
+}
+
 func (c *LoginController) Post() {
-	// utils.RenderAuthenticated(&c.Controller, "base.layout.tpl")
 	c.TplName = "login.page.tpl"
 	email := c.GetString("email")
 	password := c.GetString("password")
 	c.Data["Email"] = email
 	e := Err{HasError: false}
-	userID, hasFound, isAuthenticated := models.UserAuthenticate(email, password)
+	userId, hasFound, isAuthenticated := models.UserAuthenticate(email, password)
 
-	if !hasFound || !isAuthenticated {
-		e.HasError = true
-		if !hasFound {
-			if email == "" {
-				e.ErrMsg = "Email cannot be empty"
-			} else {
-				e.ErrMsg = "Cannot find active user with this email"
-			}
-			c.Data["Email"] = ""
-		} else {
-			e.ErrMsg = "Password incorrect"
-		}
-		c.Data["Error"] = e
+	flag := true
+	if !isAuthenticated {
+		flag = false
+		handleNotAuthenticate(&e, &c.Controller)
+	}
+
+	if !hasFound {
+		flag = false
+		handleNotFound(&e, email, &c.Controller)
+	}
+
+	if !flag {
 		c.Render()
 		return
 	}
 
 	c.Data["Error"] = e
 	// authenticatation
-	c.SetSession("authenticatedUserID", userID)
+	models.SetUserStatusById(userId, 1)
+	c.SetSession("authenticatedUserID", userId)
 	utils.SetFlash(&c.Controller, "success", "Successfully log in")
 	c.Redirect("/beegoblog/create", http.StatusFound)
 }
@@ -264,11 +274,9 @@ type LogoutController struct {
 }
 
 func (c *LogoutController) Post() {
-	// utils.RenderAuthenticated(&c.Controller, "base.layout.tpl")
-	sessionValue := c.GetSession("authenticatedUserID")
-	id, ok := sessionValue.(int)
-	if !ok {
-		log.Println("Failed to convert session value to string")
+	_, id := utils.GetIntSession(&c.Controller, "authenticatedUserID")
+	if id == 0 {
+		log.Println("Failed to get userId")
 		return
 	}
 
@@ -277,7 +285,7 @@ func (c *LogoutController) Post() {
 		return
 	}
 
-	models.DeactiveUser(id)
+	models.SetUserStatusById(id, 0)
 	utils.SetFlash(&c.Controller, "success", "Successfully log out")
 	c.Redirect("/", http.StatusFound)
 }
