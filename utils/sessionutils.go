@@ -9,7 +9,7 @@ import (
 func GetIntSession(c *bee.Controller, sessionField string) (bool, int) {
 	sessionValue := c.GetSession(sessionField)
 	if sessionValue == nil {
-		return true, 0
+		return false, 0
 	}
 
 	if id, ok := sessionValue.(int); !ok {

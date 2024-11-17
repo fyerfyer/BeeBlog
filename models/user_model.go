@@ -19,10 +19,10 @@ type User struct {
 	CreateTime     time.Time `orm:"auto_now_add;type(datetime)"` // 创建时间
 }
 
-type Err struct {
-	hasError bool
-	errMsg   string
-}
+// type Err struct {
+// 	hasError bool
+// 	errMsg   string
+// }
 
 func init() {
 	orm.RegisterModel(new(User))

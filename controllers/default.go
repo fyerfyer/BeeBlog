@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	// "strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -31,12 +32,18 @@ func (c *HomeController) Get() {
 	hasAuthenticatedUser, userId := utils.GetIntSession(&c.Controller, "authenticatedUserID")
 	if !hasAuthenticatedUser {
 		c.Articles = &[]models.Article{}
-	} else {
+	} else if !c.HasInitiated {
 		err := models.GetArticleByUserId(userId, c.Articles)
 		if err != nil {
 			log.Printf("Failed to get articles of current user: %v", err)
 			return
 		}
+
+		c.HasInitiated = true
+	}
+
+	for _, article := range *c.Articles {
+		utils.SetTagString(&article)
 	}
 
 	pageStr := c.Ctx.Input.Param(":page")
@@ -91,6 +98,7 @@ type CreateController struct {
 }
 
 func (c *CreateController) Get() {
+	utils.RenderFlash(&c.Controller, "base.layout.tpl")
 	c.TplName = "create.page.tpl"
 }
 
@@ -105,6 +113,7 @@ func (c *CreateController) Post() {
 	}
 	createTime := time.Now()
 	expiresTime := time.Now().Add(time.Duration(expires) * time.Hour * 24)
+	tagContext := c.GetString("tags")
 
 	_, userId := utils.GetIntSession(&c.Controller, "authenticatedUserID")
 	if userId == 0 {
@@ -118,10 +127,11 @@ func (c *CreateController) Post() {
 		CreateTime: createTime,
 		ExpireTime: expiresTime,
 		UserId:     userId,
+		TagString:  tagContext,
 	}
 
 	var articleId int
-	if articleId, err = models.CreateArticle(&article); err != nil {
+	if articleId, err = models.CreateArticle(&article, tagContext); err != nil {
 		log.Printf("CreateArticle failed: %v", err)
 		c.Data["Error"] = "Failed to create article."
 		c.TplName = "create.page.tpl"
@@ -285,6 +295,7 @@ func (c *LogoutController) Post() {
 		return
 	}
 
+	log.Println("logout !!!!!!!")
 	models.SetUserStatusById(id, 0)
 	utils.SetFlash(&c.Controller, "success", "Successfully log out")
 	c.Redirect("/", http.StatusFound)

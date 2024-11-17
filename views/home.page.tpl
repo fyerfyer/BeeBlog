@@ -10,12 +10,14 @@
             <th>Title</th>
             <th>Created</th>
             <th>ID</th>
+            <th style="padding-right: 50px; text-align: left;">Tag</th>
         </tr>
         {{range .Articles}}
         <tr>
             <td><a href='/beeblog/{{.Id}}'>{{.Title}}</a></td>
             <td>{{.CreateTime}}</td>
             <td>#{{.Id}}</td>
+            <td style="padding-right: 50px; text-align: left;">{{.TagString}}</td>
         </tr>
         {{end}}
     </table>

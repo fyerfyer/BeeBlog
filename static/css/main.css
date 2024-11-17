@@ -1,5 +1,6 @@
 /* Most of the css is copied from Alex Edwards' Let's go book */
 /* I added the pagination css */
+/* and modify some details to fit some new features */
 
 * {
     box-sizing: border-box;
@@ -292,11 +293,6 @@ table {
 td, th {
     text-align: left;
     padding: 9px 18px;
-}
-
-th:last-child, td:last-child {
-    text-align: right;
-    color: #6A6C6F;
 }
 
 tr {

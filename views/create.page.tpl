@@ -18,6 +18,12 @@
         <input type='radio' name='expires' value='7'> One Week
         <input type='radio' name='expires' value='1'> One Day
     </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+        <label>Tags:</label>
+        <textarea name="tags" placeholder="Enter tags separated by commas"
+                  style="width: 100%; padding: 10px; height: auto; 
+                  max-height: 200px; resize: none; overflow-y: auto;"></textarea>
+    </div>
     <div>
         <input type='submit' value='Publish snippet'>
     </div>
