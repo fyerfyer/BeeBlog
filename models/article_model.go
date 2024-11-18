@@ -84,18 +84,13 @@ func GetArticleByUserId(id int, articles *[]Article) error {
 	return nil
 }
 
-func GetArticlesWithTags(tags *[]Tag) (*[]Article, error) {
-	o := orm.NewOrm()
-	qs := o.QueryTable("article")
-	var articles *[]Article
-	for _, tag := range *tags {
-		qs = qs.Filter("Tags__Tag__Id", tag.Id)
-	}
-	_, err := qs.Distinct().All(articles)
-	if err != nil {
-		log.Printf("GetArticleWithTags failed: %v", err)
-		return nil, err
+func GetArticlesWithTagString(articles *[]Article, tagString string) *[]Article {
+	var result []Article
+	for _, article := range *articles {
+		if article.TagString == tagString {
+			result = append(result, article)
+		}
 	}
 
-	return articles, nil
+	return &result
 }

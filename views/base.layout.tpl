@@ -6,8 +6,8 @@
     <head>
         <meta charset='utf-8'>
         <title>{{template "title" .}} - BeegoBlog</title>
-        <link rel='stylesheet' href='../static/css/main.css'>
-        <link rel='shortcur icon' href='../static/img/favicon.ico' type='image/x-icon'>
+        <link rel='stylesheet' href='/static/css/main.css'>
+        <link rel='shortcur icon' href='/static/img/favicon.ico' type='image/x-icon'>
         <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700'>
     </head>
     <body>
@@ -18,7 +18,8 @@
             <div>
                 <a href='/'>Home</a>
                 {{if .IsAuthenticated}}
-                <a href='/beegoblog/create'>Create Article</a>
+                <a href='/beegoblog/create'>Create</a>
+                <a href='/beegoblog/search'>Search</a>
                 {{end}}
             </div>
             <div>
@@ -40,7 +41,7 @@
         {{template "main" .}}
         </main>
         {{template "footer" .}}
-        <script src="../static/js/main.js" type="text/javascript"></script>
+        <script src="/static/js/main.js" type="text/javascript"></script>
     </body>
 </html>
 {{end}}

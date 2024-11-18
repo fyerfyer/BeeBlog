@@ -55,11 +55,12 @@ func (c *HomeController) Get() {
 		log.Printf("Invalid page number input: %v", err)
 		return
 	}
+	pageSize := utils.GetPageSize()
 
 	c.TplName = "home.page.tpl"
-	c.Data["Articles"] = utils.GetPaginatedArticles(c.Articles, pageNum, 8)
+	c.Data["Articles"] = utils.GetPaginatedArticles(c.Articles, pageNum, pageSize)
 	c.Data["CurrentPage"] = pageNum
-	c.Data["TotalPages"] = (len(*c.Articles) + 7) / 8
+	c.Data["TotalPages"] = (len(*c.Articles) + pageSize - 1) / pageSize
 }
 
 type ShowController struct {
@@ -276,7 +277,7 @@ func (c *LoginController) Post() {
 	models.SetUserStatusById(userId, 1)
 	c.SetSession("authenticatedUserID", userId)
 	utils.SetFlash(&c.Controller, "success", "Successfully log in")
-	c.Redirect("/beegoblog/create", http.StatusFound)
+	c.Redirect("/", http.StatusFound)
 }
 
 type LogoutController struct {
@@ -295,7 +296,6 @@ func (c *LogoutController) Post() {
 		return
 	}
 
-	log.Println("logout !!!!!!!")
 	models.SetUserStatusById(id, 0)
 	utils.SetFlash(&c.Controller, "success", "Successfully log out")
 	c.Redirect("/", http.StatusFound)
@@ -320,4 +320,42 @@ func (c *ProfileController) Get() {
 	}
 
 	c.Data["User"] = user
+}
+
+type SearchController struct {
+	BaseController
+}
+
+func (c *SearchController) Get() {
+	c.TplName = "search.page.tpl"
+}
+
+func (c *SearchController) Post() {
+	c.TplName = "search.page.tpl"
+	tagString := c.GetString("tag")
+
+	utils.SetFlash(&c.Controller, "success", "Successfully search for the tag")
+	c.Redirect(fmt.Sprintf("/beegoblog/search/%s", tagString), http.StatusFound)
+}
+
+type SearchResultController struct {
+	BaseController
+	Articles *[]models.Article
+}
+
+func (c *SearchResultController) Get() {
+	tagString := c.Ctx.Input.Param(":tag")
+
+	// the articles with tagString from current user's articles
+	articles := models.GetArticlesWithTagString(c.Articles, tagString)
+	for _, article := range *c.Articles {
+		utils.SetTagString(&article)
+	}
+
+	c.TplName = "searchresult.page.tpl"
+	c.Data["Articles"] = utils.GetPaginatedArticles(articles, 1, 8)
+	c.Data["CurrentPage"] = 1
+	c.Data["TotalPages"] = (len(*articles) + 7) / 8
+
+	c.Render()
 }

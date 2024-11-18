@@ -17,6 +17,9 @@ func init() {
 	beego.Router("/beegoblog/:id", &controllers.ShowController{Articles: &articles})
 	beego.Router("/beegoblog/create", &controllers.CreateController{Articles: &articles})
 
+	beego.Router("/beegoblog/search", &controllers.SearchController{})
+	beego.Router("/beegoblog/search/:tag:string", &controllers.SearchResultController{Articles: &articles})
+
 	beego.Router("/user/signup", &controllers.SignUpController{})
 	beego.Router("/user/login", &controllers.LoginController{})
 	beego.Router("/user/logout", &controllers.LogoutController{})

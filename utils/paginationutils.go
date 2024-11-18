@@ -2,6 +2,8 @@ package utils
 
 import (
 	"beeblog/models"
+
+	bee "github.com/beego/beego/v2/server/web"
 )
 
 type Pagination struct {
@@ -10,6 +12,11 @@ type Pagination struct {
 	PageSize            int
 	CurrrentPage        int
 	TotalPages          int
+}
+
+func GetPageSize() int {
+	pagesize, _ := bee.AppConfig.Int("pagesize")
+	return pagesize
 }
 
 func GetPaginatedArticles(articles *[]models.Article, pageNum int, pageSize int) *[]models.Article {
