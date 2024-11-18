@@ -11,12 +11,12 @@ import (
 )
 
 type User struct {
-	Id             int    `orm:"auto"` // 自增主键
-	Username       string // 用户名必填，长度不超过20个字符
-	Email          string // Email必填且符合Email格式
+	Id             int `orm:"auto"`
+	Username       string
+	Email          string
 	HashedPassword string
 	Status         int
-	CreateTime     time.Time `orm:"auto_now_add;type(datetime)"` // 创建时间
+	CreateTime     time.Time `orm:"auto_now_add;type(datetime)"` // create time
 }
 
 // type Err struct {

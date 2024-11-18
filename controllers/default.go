@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+
 	// "strings"
 	"time"
 
@@ -274,6 +276,26 @@ func (c *LoginController) Post() {
 
 	c.Data["Error"] = e
 	// authenticatation
+	// file, _ := os.Open("/views/email.tpl")
+	// defer file.Close()
+	// html, _ := io.ReadAll(file)
+
+	utils.Background(func() {
+		content, err := os.ReadFile("views/email.page.tpl")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		emailInput := models.Email{
+			To:      []string{email},
+			From:    "fuy60703@gmail.com",
+			Subject: "authentication",
+			HTML:    content,
+		}
+
+		models.SendEmail(emailInput)
+	})
+
 	models.SetUserStatusById(userId, 1)
 	c.SetSession("authenticatedUserID", userId)
 	utils.SetFlash(&c.Controller, "success", "Successfully log in")
