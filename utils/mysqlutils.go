@@ -8,7 +8,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func CreateDatabaseIfNotExists(dsn string) error {
+func createDatabaseIfNotExists(dsn string) error {
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -30,7 +30,7 @@ func CreateDatabaseIfNotExists(dsn string) error {
 
 func SQLinit() {
 	dsn := "root:110119abc@tcp(127.0.0.1:3306)/?charset=utf8"
-	err := CreateDatabaseIfNotExists(dsn)
+	err := createDatabaseIfNotExists(dsn)
 	if err != nil {
 		log.Fatalf("Create database failed: %v", err)
 	}
